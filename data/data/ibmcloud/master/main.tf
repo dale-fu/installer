@@ -10,6 +10,15 @@ locals {
 # Master nodes
 ############################################
 
+resource "ibm_is_volume" "master_volume" {
+  name            = "${local.prefix}-master-volume-${count.index}"
+  profile         = "10iops-tier"
+  resource_group  = var.resource_group_id
+  tags            = local.tags
+
+  zone            = var.control_plane_subnet_zone_list[count.index % local.zone_count]
+}
+
 resource "ibm_is_instance" "master_node" {
   count = var.master_count
 
@@ -18,6 +27,11 @@ resource "ibm_is_instance" "master_node" {
   profile        = var.ibmcloud_master_instance_type
   resource_group = var.resource_group_id
   tags           = local.tags
+
+  boot_volume {
+    volume_id           = ibm_is_volume.master_volume
+    auto_delete_volume  = true
+  }
 
   primary_network_interface {
     name            = "eth0"

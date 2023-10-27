@@ -27,12 +27,26 @@ data "ibm_is_subnet" "compute_subnets" {
 # Bootstrap node
 ############################################
 
+resource "ibm_is_volume" "bootstrap_volume" {
+  name            = "${local.prefix}-bootstrap-volume"
+  profile         = "10iops-tier"
+  resource_group  = var.resource_group_id
+  tags            = local.tags
+
+  zone            = var.control_plane_subnet_zone_list[0]
+}
+
 resource "ibm_is_instance" "bootstrap_node" {
   name           = "${local.prefix}-bootstrap"
   image          = var.vsi_image_id
   profile        = var.ibmcloud_bootstrap_instance_type
   resource_group = var.resource_group_id
   tags           = local.tags
+
+  boot_volume {
+    volume_id           = ibm_is_volume.bootstrap_volume
+    auto_delete_volume  = true
+  }
 
   primary_network_interface {
     name            = "eth0"
